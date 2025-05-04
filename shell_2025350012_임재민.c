@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #define MAX_ARGS 64
+#define MAX_LINE 256
 
 void wordsep(char* line, char** args) {
 	int i = 0;
@@ -14,14 +15,24 @@ void wordsep(char* line, char** args) {
 }
 
 int main(void) {
-	char line[256];
+	char line[MAX_LINE];
 	char* args[MAX_ARGS];
-	int i;
-	while (fgets(line, sizeof(line), stdin) != NULL) {
-		wordsep(line, args);
-		for (i = 0; args[i] != NULL; i++) {
-			printf("%s\n", args[i]);
+	while (1) {
+		printf("kai2006>");
+		fflush(stdout);
+
+		if (fgets(line, sizeof(line), stdin) == NULL) {
+			break;
 		}
+		wordsep(line, args);
+
+		if (args[0] == NULL) {
+			continue;
+		}
+
+		if (strcmp(args[0], "exit") == 0) {
+			break;
+		}
+
 	}
-	return 0;
 }
