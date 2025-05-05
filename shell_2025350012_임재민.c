@@ -1,6 +1,8 @@
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
+#include <direct.h> 
 #define MAX_ARGS 64
 #define MAX_LINE 256
 
@@ -34,5 +36,13 @@ int main(void) {
 			break;
 		}
 
+		if (strcmp(args[0], "cd") == 0) {
+
+			if (args[1] != NULL)
+				_chdir(args[1]);
+			else
+				fprintf(stderr, "cd:missing operand\n");
+			continue;
+		}
 	}
 }
