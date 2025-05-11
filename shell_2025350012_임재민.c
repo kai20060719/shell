@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -53,37 +52,29 @@ int  shell_prompt(){
 	return 0;
 }
 
-int main(void) {
-	char line[MAX_LINE];
-	char* args[MAX_ARGS];
-	while (1) {
-		if(shell_prompt() < 0){
-		fprintf(stderr, "Prompt failed.\n");
-		break;
-		}
-
-		if (fgets(line, sizeof(line), stdin) == NULL) {
-			break;
-		}
-		wordsep(line, args);
-
-		if (args[0] == NULL) {
-			continue;
+void command(char* line){
+    char* args[MAX_ARGS];
+    wordsep(line, args);
+	if (args[0] == NULL) {
+			return;
 		}
 
 		if (strcmp(args[0], "exit") == 0) {
-			break;
+			exit(0);
 		}
 
 		if (strcmp(args[0], "cd") == 0) {
 
 			if (args[1] != NULL){
+		 if (strcmp(args[1], "~") == 0) {  
+               	 args[1] = home_dir;  
+           		 }
 			     if(chdir(args[1]) != 0)
                                   perror("cd");
                           }
 			else
 				fprintf(stderr, "cd:missing operand\n");
-			continue;
+			return;
 		}
 
 	if(strcmp(args[0], "pwd") == 0){
@@ -94,7 +85,7 @@ int main(void) {
 	else{
 		perror("pwd");
 	}
-	continue;
+	return;
 	}
 pid_t pid = fork();
 
@@ -108,9 +99,27 @@ else if(pid == 0) {
 	_exit(1);
 	}
 	else{
-	wait(NULL);
+	int status;
+	wait(&status);
+
 	}
       }
-return 0;
-}
+
+int main(void) {
+	char line[MAX_LINE];
+	char* args[MAX_ARGS];
+	while (1) {
+		if(shell_prompt() < 0){
+		fprintf(stderr, "Prompt failed.\n");
+		break;
+		}
+
+		if (fgets(line, sizeof(line), stdin) == NULL) {
+			break;
+		}
+		command(line);
+	}
+	return 0;
+ 		}
+
 
