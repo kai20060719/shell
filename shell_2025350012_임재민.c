@@ -52,11 +52,11 @@ int  shell_prompt(){
 	return 0;
 }
 
-void command(char* line){
+int command(char* line){
     char* args[MAX_ARGS];
     wordsep(line, args);
 	if (args[0] == NULL) {
-			return;
+			return 1;
 		}
 
 		if (strcmp(args[0], "exit") == 0) {
@@ -69,41 +69,98 @@ void command(char* line){
 		 if (strcmp(args[1], "~") == 0) {  
                	 args[1] = home_dir;  
            		 }
-			     if(chdir(args[1]) != 0)
-                                  perror("cd");
-                          }
-			else
-				fprintf(stderr, "cd:missing operand\n");
-			return;
+		 if(chdir(args[1]) != 0){
+                      perror("cd");
+			 return 1;
+                 }
+		return 0;
+		}
+			else{
+			fprintf(stderr, "cd:missing operand\n");
+			return 1;
+		}
 		}
 
 	if(strcmp(args[0], "pwd") == 0){
 	char cwd[PATH_MAX];
 	if(getcwd(cwd, sizeof(cwd)) != NULL){
 		printf("%s\n", cwd);
+	 fflush(stdout);
 	}	
 	else{
 		perror("pwd");
+		return 1;
 	}
-	return;
+	return 0;
 	}
 pid_t pid = fork();
 
 if(pid < 0){
 	perror("Fork failded");	
+	return 1;
     }
 else if(pid == 0) {
        if(execvp(args[0], args) < 0){
 	perror("Execution failed");
+	
 	}
 	_exit(1);
 	}
 	else{
 	int status;
-	wait(&status);
-
+	waitpid(pid, &status, 0);
+	if(WIFEXITED(status)){
+		return WEXITSTATUS(status);
 	}
+	}
+	return 1;
       }
+
+void multiple_commands(char* line) {
+    char* m_command;
+    int prev_success = 1;
+
+    
+    m_command = strtok(line, ";");
+
+    while (m_command != NULL) {
+       
+        while (*m_command == ' ' || *m_command == '\t') {
+            m_command++;
+        }
+
+        
+        char* and_split = strstr(m_command, "&&");
+        char* or_split = strstr(m_command, "||");
+
+        if (and_split) {
+            *and_split = '\0';  
+            prev_success = command(m_command);
+
+            if (prev_success == 0) {
+                prev_success = command(and_split + 2);  
+            }
+        } else if (or_split) {
+            *or_split = '\0';  
+            prev_success = command(m_command);
+
+            if (prev_success != 0) {
+                prev_success = command(or_split + 2);  
+            }
+        } else {
+            prev_success = command(m_command);  
+        }
+
+        
+        m_command = strtok(NULL, ";");
+
+    
+        while (m_command != NULL && (*m_command == ' ' || *m_command == '\t')) {
+            m_command++;
+        }
+    }
+}
+
 
 int main(void) {
 	char line[MAX_LINE];
@@ -117,9 +174,8 @@ int main(void) {
 		if (fgets(line, sizeof(line), stdin) == NULL) {
 			break;
 		}
-		command(line);
+		multiple_commands(line);
 	}
 	return 0;
  		}
-
 
