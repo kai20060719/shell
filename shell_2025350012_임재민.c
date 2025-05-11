@@ -42,5 +42,20 @@ int main(void) {
                                 fprintf(stderr, "cd:missing operand\n");
                         continue;
                 }
+pid_t pid = fork();
+
+if(pid < 0){
+        perror("Fork failded"); 
+    }
+else if(pid == 0) {
+       if(execvp(args[0], args) < 0){
+        perror("Execution failed");
         }
+        _exit(1);
+        }
+        else{
+        wait(NULL);
+        }
+      }
+return 0;
 }
