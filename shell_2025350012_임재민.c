@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h> 
+#include <sys/wait.h>
 #define MAX_ARGS 64
 #define MAX_LINE 256
 
