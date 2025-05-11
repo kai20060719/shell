@@ -85,6 +85,17 @@ int main(void) {
 				fprintf(stderr, "cd:missing operand\n");
 			continue;
 		}
+
+	if(strcmp(args[0], "pwd") == 0){
+	char cwd[PATH_MAX];
+	if(getcwd(cwd, sizeof(cwd)) != NULL){
+		printf("%s\n", cwd);
+	}	
+	else{
+		perror("pwd");
+	}
+	continue;
+	}
 pid_t pid = fork();
 
 if(pid < 0){
@@ -102,3 +113,4 @@ else if(pid == 0) {
       }
 return 0;
 }
+
