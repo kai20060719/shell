@@ -1,0 +1,17 @@
+CC = gcc               
+CFLAGS = -Wall -g       
+TARGET = shell          
+SRC = shell.c          
+
+
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
+
+
+run: $(TARGET)
+	./$(TARGET)
+
+
+clean:
+	rm -f $(TARGET)
+
