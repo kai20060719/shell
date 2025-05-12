@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <pwd.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #define MAX_ARGS 64
 #define MAX_LINE 256
@@ -14,6 +15,16 @@
 #define COLOR_RESET "\033[0m"
 
 char* home_dir;
+int count = 1;
+
+typedef struct {
+    int job_id;
+    pid_t pid;
+    char command[MAX_LINE];
+} Job;
+
+Job jobs[64];
+int job_count = 0;
 
 void wordsep(char* line, char** args) {
 	int i = 0;
@@ -54,10 +65,20 @@ int  shell_prompt(){
 
 int command(char* line){
     char* args[MAX_ARGS];
+	int background_flag = 0;
+	
     wordsep(line, args);
 	if (args[0] == NULL) {
 			return 1;
 		}
+	int i = 0;
+    	while (args[i] != NULL) {
+        	i++;
+    		}
+    	if (i > 0 && strcmp(args[i - 1], "&") == 0) {
+        	background_flag = 1;
+        	args[i - 1] = NULL; 
+    		}
 
 		if (strcmp(args[0], "exit") == 0) {
 			exit(0);
@@ -107,14 +128,44 @@ else if(pid == 0) {
 	_exit(1);
 	}
 	else{
+	if(!background_flag){
 	int status;
 	waitpid(pid, &status, 0);
 	if(WIFEXITED(status)){
 		return WEXITSTATUS(status);
 	}
 	}
+	else{
+	   jobs[job_count].job_id = count;
+    	jobs[job_count].pid = pid;
+	snprintf(jobs[job_count].command, MAX_LINE, "%s %s", args[0], args[1] ? args[1] : "");
+    	job_count++;
+	printf("[%d] %d\n", count++, pid);
+	}
+	}
 	return 1;
       }
+
+
+void background(int sig){
+	int status;
+	pid_t pid;
+
+	while((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+	     for (int i = 0; i < job_count; i++) {
+            if (jobs[i].pid == pid) {
+                if (WIFEXITED(status)) {
+                    printf("\n[%d]+ Done       %s\n", jobs[i].job_id, jobs[i].command);
+                } else if (WIFSIGNALED(status)) {
+                    printf("\n[%d]- Terminated %s\n", jobs[i].job_id, jobs[i].command);
+                }
+                break;
+            }
+        }
+	shell_prompt();
+	fflush(stdout);
+	}
+	}
 
 int  pipeline_execute(char* line){
 	char* commands[MAX_ARGS];
@@ -222,6 +273,8 @@ void multiple_commands(char* line) {
 int main(void) {
 	char line[MAX_LINE];
 	char* args[MAX_ARGS];
+	  signal(SIGCHLD, background);
+
 	while (1) {
 		if(shell_prompt() < 0){
 		fprintf(stderr, "Prompt failed.\n");
