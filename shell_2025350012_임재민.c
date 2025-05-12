@@ -116,9 +116,69 @@ else if(pid == 0) {
 	return 1;
       }
 
+int  pipeline_execute(char* line){
+	char* commands[MAX_ARGS];
+	 int num_commands = 0;
+
+ 	 commands[num_commands] = strtok(line, "|");
+    	while (commands[num_commands] != NULL) {
+        	num_commands++;
+       		 commands[num_commands] = strtok(NULL, "|");
+   	 }
+
+	int i, in_fd = 0, status = 0;
+	
+	for(i = 0; i < num_commands; i++){
+	int pipe_fd[2];
+	if (pipe(pipe_fd) == -1) {
+   	 perror("Pipe creation failed");
+   	 return 1;
+	}
+
+
+	if(fork() == 0){
+	dup2(in_fd, 0);
+
+	if(i < num_commands - 1){
+	dup2(pipe_fd[1], 1);
+	}
+
+	close(pipe_fd[0]);
+	close(pipe_fd[1]); 
+	char* args[MAX_ARGS];
+	wordsep(commands[i], args);
+
+	if(execvp(args[0], args) < 0){
+	perror("Execution failed");
+	_exit(1);
+	}
+	}
+	else{
+	wait(&status);
+	close(pipe_fd[1]);
+	if(in_fd != 0){
+		close(in_fd);
+	}
+	in_fd = pipe_fd[0];
+	}	
+	}
+	while (wait(&status) > 0) {     
+	 if (WIFEXITED(status)) {
+        if (WEXITSTATUS(status) != 0) {
+            return WEXITSTATUS(status);          }
+    } else {
+                return 1;      
+	}
+	}
+	return 0;
+}
+
+
+
 void multiple_commands(char* line) {
     char* m_command;
     int prev_success = 1;
+
 
     
     m_command = strtok(line, ";");
@@ -148,19 +208,16 @@ void multiple_commands(char* line) {
                 prev_success = command(or_split + 2);  
             }
         } else {
-            prev_success = command(m_command);  
-        }
-
-        
-        m_command = strtok(NULL, ";");
-
-    
-        while (m_command != NULL && (*m_command == ' ' || *m_command == '\t')) {
-            m_command++;
-        }
-    }
-}
-
+        	if(strstr(m_command, "|")){
+			prev_success = pipeline_execute(m_command);
+		}
+		else
+			prev_success = command(m_command);
+		}     
+         m_command = strtok(NULL, ";");
+	
+	}
+	}
 
 int main(void) {
 	char line[MAX_LINE];
@@ -177,5 +234,5 @@ int main(void) {
 		multiple_commands(line);
 	}
 	return 0;
- 		}
+}
 
