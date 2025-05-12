@@ -178,10 +178,10 @@ int  pipeline_execute(char* line){
 void multiple_commands(char* line) {
     char* m_command;
     int prev_success = 1;
-
+	char* save_ptr;
 
     
-    m_command = strtok(line, ";");
+    m_command = strtok_r(line, ";",&save_ptr);
 
     while (m_command != NULL) {
        
@@ -214,7 +214,7 @@ void multiple_commands(char* line) {
 		else
 			prev_success = command(m_command);
 		}     
-         m_command = strtok(NULL, ";");
+         m_command = strtok_r(NULL, ";",&save_ptr);
 	
 	}
 	}
